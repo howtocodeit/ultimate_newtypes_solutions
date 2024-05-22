@@ -1,16 +1,22 @@
-/*! # Exercise 2
-    Implement a method on `Password` allowing it to be compared with candidate password strings
-    submitted by users during login attempts.
+/*!
+   # Exercise 2
 
-    Your method should return a `Result`: `0k()` if Password matches the candidate, or an `Err` of
-    your choice if not.
- */
+   Implement a method on `Password` allowing it to be compared with candidate password strings
+   submitted by users during login attempts.
+
+   Your method should return a `Result`: `0k()` if Password matches the candidate, or an `Err` of
+   your choice if not.
+*/
 
 use std::fmt;
 use std::fmt::{Debug, Display};
 use std::sync::OnceLock;
 
-use argon2::{Argon2, password_hash::{PasswordHasher, rand_core, SaltString}, password_hash, PasswordVerifier};
+use argon2::{
+    password_hash,
+    password_hash::{rand_core, PasswordHasher, SaltString},
+    Argon2, PasswordVerifier,
+};
 use regex::Regex;
 use thiserror::Error;
 
@@ -40,7 +46,9 @@ fn password_allowed_chars() -> &'static Regex {
 pub enum PasswordError {
     #[error("passwords must be at least {PASSWORD_MIN_BYTES} bytes long, but candidate was only {0} bytes")]
     TooShort(usize),
-    #[error("passwords must be at most {PASSWORD_MAX_BYTES} bytes long, but candidate was {0} bytes")]
+    #[error(
+        "passwords must be at most {PASSWORD_MAX_BYTES} bytes long, but candidate was {0} bytes"
+    )]
     TooLong(usize),
     #[error("password candidate contained invalid characters")]
     InvalidChars,
@@ -82,7 +90,10 @@ impl Password {
         let parsed_hash = argon2::PasswordHash::new(&self.hash).unwrap_or_else(|e| {
             // Should be unreachable, since all `Password` instances are valid, and all valid
             // `Password` instances contain a hash produced by `argon2`.
-            unreachable!("failed to instantiate `argon2::PasswordHash` from `Password.hash`: {:?}", e)
+            unreachable!(
+                "failed to instantiate `argon2::PasswordHash` from `Password.hash`: {:?}",
+                e
+            )
         });
         Argon2::default().verify_password(candidate.as_bytes(), &parsed_hash)?;
         Ok(())
@@ -151,10 +162,19 @@ mod password_tests {
     fn test_new_valid() {
         let candidate = "password123";
         let result = Password::new(candidate);
-        assert!(result.is_ok(), "expected candidate '{}' to be valid, but got {:?}", candidate, result);
+        assert!(
+            result.is_ok(),
+            "expected candidate '{}' to be valid, but got {:?}",
+            candidate,
+            result
+        );
 
         let password = result.unwrap();
-        assert!(password.verify_candidate(candidate).is_ok(), "expected hash to match candidate '{}'", candidate);
+        assert!(
+            password.verify_candidate(candidate).is_ok(),
+            "expected hash to match candidate '{}'",
+            candidate
+        );
     }
 
     #[test]
@@ -162,7 +182,11 @@ mod password_tests {
         let candidate = "short";
         let result = Password::new(candidate);
         let expected = Err(PasswordError::TooShort(candidate.len()));
-        assert_eq!(result, expected, "expected candidate '{}' to be too short, but got {:?}", candidate, result);
+        assert_eq!(
+            result, expected,
+            "expected candidate '{}' to be too short, but got {:?}",
+            candidate, result
+        );
     }
 
     #[test]
@@ -170,7 +194,11 @@ mod password_tests {
         let candidate = "a".repeat(PASSWORD_MAX_BYTES + 1);
         let result = Password::new(&candidate);
         let expected = Err(PasswordError::TooLong(candidate.len()));
-        assert_eq!(result, expected, "expected candidate '{}' to be too long, but got {:?}", candidate, result);
+        assert_eq!(
+            result, expected,
+            "expected candidate '{}' to be too long, but got {:?}",
+            candidate, result
+        );
     }
 
     #[test]
@@ -178,7 +206,11 @@ mod password_tests {
         let candidate = "abcdefghあ";
         let result = Password::new(candidate);
         let expected = Err(PasswordError::InvalidChars);
-        assert_eq!(result, expected, "expected candidate '{}' to contain invalid characters, but got {:?}", candidate, result);
+        assert_eq!(
+            result, expected,
+            "expected candidate '{}' to contain invalid characters, but got {:?}",
+            candidate, result
+        );
     }
 
     #[test]
@@ -186,7 +218,11 @@ mod password_tests {
         let password = Password::new("password123").unwrap();
         let debug = format!("{:?}", password);
         let expected = "Password { hash: \"REDACTED\" }";
-        assert_eq!(debug, expected, "expected debug output to redact hash, but got '{}'", debug);
+        assert_eq!(
+            debug, expected,
+            "expected debug output to redact hash, but got '{}'",
+            debug
+        );
     }
 
     #[test]
@@ -194,7 +230,11 @@ mod password_tests {
         let password = Password::new("password123").unwrap();
         let display = format!("{}", password);
         let expected = "PASSWORD_REDACTED";
-        assert_eq!(display, expected, "expected display output to redact hash, but got '{}'", display);
+        assert_eq!(
+            display, expected,
+            "expected display output to redact hash, but got '{}'",
+            display
+        );
     }
 
     #[test]
@@ -220,11 +260,19 @@ mod password_tests {
     fn test_try_from_str() {
         let candidate = "password123";
         let result = Password::try_from(candidate);
-        assert!(result.is_ok(), "expected candidate '{}' to be valid, but got {:?}", candidate, result);
+        assert!(
+            result.is_ok(),
+            "expected candidate '{}' to be valid, but got {:?}",
+            candidate,
+            result
+        );
 
         let password = result.unwrap();
-        assert!(password.verify_candidate(candidate).is_ok(), "expected candidate '{}' to match password", candidate);
-
+        assert!(
+            password.verify_candidate(candidate).is_ok(),
+            "expected candidate '{}' to match password",
+            candidate
+        );
     }
 
     #[test]
@@ -232,7 +280,11 @@ mod password_tests {
         let candidate = "password123";
         let password = Password::new(candidate).unwrap();
         let result = password.verify_candidate(candidate);
-        assert!(result.is_ok(), "expected candidate to match password, but got {:?}", result);
+        assert!(
+            result.is_ok(),
+            "expected candidate to match password, but got {:?}",
+            result
+        );
     }
 
     #[test]
@@ -240,7 +292,11 @@ mod password_tests {
         let password = Password::new("password123").unwrap();
         let candidate = "wrongpassword";
         let result = password.verify_candidate(candidate);
-        assert!(result.is_err(), "expected candidate '{}' not to match password", candidate);
+        assert!(
+            result.is_err(),
+            "expected candidate '{}' not to match password",
+            candidate
+        );
     }
 
     #[test]

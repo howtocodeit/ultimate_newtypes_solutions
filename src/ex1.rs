@@ -1,20 +1,26 @@
-/*! # Exercise 1
-    Design a newtype, `Password`, representing a user's password.
+/*!
+   # Exercise 1
 
-    The `Password` constructor should ensure that passwords submitted by users are at least 8 ASCII
-    characters long – any other password policy you'd like to enforce is up to you!
+   Design a newtype, `Password`, representing a user's password.
 
-    In real-life code, we want to minimize the time that user passwords are exposed as
-    human-readable strings. A classic mistake is logging raw passwords accidentally. With this in
-    mind, `Password` should not hold onto the user-submitted string, but should store a hash
-    instead.
- */
+   The `Password` constructor should ensure that passwords submitted by users are at least 8 ASCII
+   characters long – any other password policy you'd like to enforce is up to you!
 
+   In real-life code, we want to minimize the time that user passwords are exposed as
+   human-readable strings. A classic mistake is logging raw passwords accidentally. With this in
+   mind, `Password` should not hold onto the user-submitted string, but should store a hash
+   instead.
+*/
+
+use argon2::{
+    password_hash,
+    password_hash::{rand_core, PasswordHasher, SaltString},
+    Argon2,
+};
+use regex::Regex;
 use std::fmt;
 use std::fmt::{Debug, Display};
 use std::sync::OnceLock;
-use argon2::{password_hash::{rand_core, SaltString, PasswordHasher}, Argon2, password_hash};
-use regex::Regex;
 use thiserror::Error;
 
 /// The minimum length of a password in bytes.
@@ -43,7 +49,9 @@ fn password_allowed_chars() -> &'static Regex {
 pub enum PasswordError {
     #[error("passwords must be at least {PASSWORD_MIN_BYTES} bytes long, but candidate was only {0} bytes")]
     TooShort(usize),
-    #[error("passwords must be at most {PASSWORD_MAX_BYTES} bytes long, but candidate was {0} bytes")]
+    #[error(
+        "passwords must be at most {PASSWORD_MAX_BYTES} bytes long, but candidate was {0} bytes"
+    )]
     TooLong(usize),
     #[error("password candidate contained invalid characters")]
     InvalidChars,
@@ -133,15 +141,19 @@ fn hash_password_candidate(candidate: &str) -> Result<String, password_hash::Err
 
 #[cfg(test)]
 mod password_tests {
-    use argon2::PasswordVerifier;
     use super::*;
-
+    use argon2::PasswordVerifier;
 
     #[test]
     fn test_new_valid() {
         let candidate = "password123";
         let result = Password::new(candidate);
-        assert!(result.is_ok(), "expected candidate '{}' to be valid, but got {:?}", candidate, result);
+        assert!(
+            result.is_ok(),
+            "expected candidate '{}' to be valid, but got {:?}",
+            candidate,
+            result
+        );
 
         let password = result.unwrap();
 
@@ -150,7 +162,12 @@ mod password_tests {
         // candidate using the original hashing crate.
         let parsed_hash = argon2::PasswordHash::new(&password.hash).unwrap();
         let verification = Argon2::default().verify_password(candidate.as_bytes(), &parsed_hash);
-        assert!(verification.is_ok(), "expected hash to match candidate '{}', but got {:?}", candidate, verification);
+        assert!(
+            verification.is_ok(),
+            "expected hash to match candidate '{}', but got {:?}",
+            candidate,
+            verification
+        );
     }
 
     #[test]
@@ -158,7 +175,11 @@ mod password_tests {
         let candidate = "short";
         let result = Password::new(candidate);
         let expected = Err(PasswordError::TooShort(candidate.len()));
-        assert_eq!(result, expected, "expected candidate '{}' to be too short, but got {:?}", candidate, result);
+        assert_eq!(
+            result, expected,
+            "expected candidate '{}' to be too short, but got {:?}",
+            candidate, result
+        );
     }
 
     #[test]
@@ -166,7 +187,11 @@ mod password_tests {
         let candidate = "a".repeat(PASSWORD_MAX_BYTES + 1);
         let result = Password::new(&candidate);
         let expected = Err(PasswordError::TooLong(candidate.len()));
-        assert_eq!(result, expected, "expected candidate '{}' to be too long, but got {:?}", candidate, result);
+        assert_eq!(
+            result, expected,
+            "expected candidate '{}' to be too long, but got {:?}",
+            candidate, result
+        );
     }
 
     #[test]
@@ -174,7 +199,11 @@ mod password_tests {
         let candidate = "abcdefghあ";
         let result = Password::new(candidate);
         let expected = Err(PasswordError::InvalidChars);
-        assert_eq!(result, expected, "expected candidate '{}' to contain invalid characters, but got {:?}", candidate, result);
+        assert_eq!(
+            result, expected,
+            "expected candidate '{}' to contain invalid characters, but got {:?}",
+            candidate, result
+        );
     }
 
     #[test]
@@ -182,7 +211,11 @@ mod password_tests {
         let password = Password::new("password123").unwrap();
         let debug = format!("{:?}", password);
         let expected = "Password { hash: \"REDACTED\" }";
-        assert_eq!(debug, expected, "expected debug output to redact hash, but got '{}'", debug);
+        assert_eq!(
+            debug, expected,
+            "expected debug output to redact hash, but got '{}'",
+            debug
+        );
     }
 
     #[test]
@@ -190,7 +223,11 @@ mod password_tests {
         let password = Password::new("password123").unwrap();
         let display = format!("{}", password);
         let expected = "PASSWORD_REDACTED";
-        assert_eq!(display, expected, "expected display output to redact hash, but got '{}'", display);
+        assert_eq!(
+            display, expected,
+            "expected display output to redact hash, but got '{}'",
+            display
+        );
     }
 
     #[test]
@@ -216,11 +253,21 @@ mod password_tests {
     fn test_try_from_str() {
         let candidate = "password123";
         let result = Password::try_from(candidate);
-        assert!(result.is_ok(), "expected candidate '{}' to be valid, but got {:?}", candidate, result);
+        assert!(
+            result.is_ok(),
+            "expected candidate '{}' to be valid, but got {:?}",
+            candidate,
+            result
+        );
 
         let password = result.unwrap();
         let parsed_hash = argon2::PasswordHash::new(&password.hash).unwrap();
         let verification = Argon2::default().verify_password(candidate.as_bytes(), &parsed_hash);
-        assert!(verification.is_ok(), "expected hash to match candidate '{}', but got {:?}", candidate, verification);
+        assert!(
+            verification.is_ok(),
+            "expected hash to match candidate '{}', but got {:?}",
+            candidate,
+            verification
+        );
     }
 }
