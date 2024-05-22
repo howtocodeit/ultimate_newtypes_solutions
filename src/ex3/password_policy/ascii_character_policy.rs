@@ -1,10 +1,11 @@
 /*!
-    # ascii_character_policy
+   # ascii_character_policy
 
-    Implements a password policy which validates that password candidates contain only a subset of
-    ASCII characters.
- */
+   Implements a password policy which validates that password candidates contain only a subset of
+   ASCII characters.
+*/
 
+use std::fmt::{Display, Formatter};
 use std::sync::OnceLock;
 
 use regex::Regex;
@@ -26,7 +27,6 @@ const PASSWORD_MIN_BYTES: usize = 8;
 // bound to prevent giant password spam.
 const PASSWORD_MAX_BYTES: usize = 72;
 
-
 /// Static regex defining the characters allowed in a password. Does not validate length, which
 /// should be done separately.
 fn password_allowed_chars() -> &'static Regex {
@@ -38,71 +38,108 @@ fn password_allowed_chars() -> &'static Regex {
 /// - minimum password length
 /// - maximum password length
 /// - allowed characters from a subset of ASCII.
-pub struct ASCIICharacterPolicy;
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AsciiCharacterPolicy;
 
 /// Error type for password policy violations.
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
-pub enum ASCIICharacterPolicyError {
+pub enum AsciiCharacterPolicyError {
     #[error("passwords must be at least {PASSWORD_MIN_BYTES} bytes long, but candidate was only {0} bytes")]
     TooShort(usize),
-    #[error("passwords must be at most {PASSWORD_MAX_BYTES} bytes long, but candidate was {0} bytes")]
+    #[error(
+        "passwords must be at most {PASSWORD_MAX_BYTES} bytes long, but candidate was {0} bytes"
+    )]
     TooLong(usize),
     #[error("password candidate contained invalid characters")]
     InvalidChars,
 }
 
-impl PasswordPolicy for ASCIICharacterPolicy {
-    type Error = ASCIICharacterPolicyError;
+impl PasswordPolicy for AsciiCharacterPolicy {
+    type Error = AsciiCharacterPolicyError;
 
     fn validate(&self, candidate: &str) -> Result<(), Self::Error> {
         if candidate.len() < PASSWORD_MIN_BYTES {
-            return Err(ASCIICharacterPolicyError::TooShort(candidate.len()));
+            return Err(AsciiCharacterPolicyError::TooShort(candidate.len()));
         }
 
         if candidate.len() > PASSWORD_MAX_BYTES {
-            return Err(ASCIICharacterPolicyError::TooLong(candidate.len()));
+            return Err(AsciiCharacterPolicyError::TooLong(candidate.len()));
         }
 
         if !password_allowed_chars().is_match(candidate) {
-            return Err(ASCIICharacterPolicyError::InvalidChars);
+            return Err(AsciiCharacterPolicyError::InvalidChars);
         }
 
         Ok(())
     }
 }
 
+impl Display for AsciiCharacterPolicy {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "AsciiCharacterPolicy")
+    }
+}
+
 #[cfg(test)]
-mod ascii_character_policy_tests {
+mod tests {
     use super::*;
 
     #[test]
     fn test_new_valid() {
         let candidate = "password123";
-        let result = ASCIICharacterPolicy.validate(candidate);
-        assert!(result.is_ok(), "expected candidate '{}' to be valid, but got {:?}", candidate, result);
+        let result = AsciiCharacterPolicy.validate(candidate);
+        assert!(
+            result.is_ok(),
+            "expected candidate '{}' to be valid, but got {:?}",
+            candidate,
+            result
+        );
     }
 
     #[test]
     fn test_new_too_short() {
         let candidate = "short";
-        let result =  ASCIICharacterPolicy.validate(candidate);
-        let expected = Err(ASCIICharacterPolicyError::TooShort(candidate.len()));
-        assert_eq!(result, expected, "expected candidate '{}' to be too short, but got {:?}", candidate, result);
+        let result = AsciiCharacterPolicy.validate(candidate);
+        let expected = Err(AsciiCharacterPolicyError::TooShort(candidate.len()));
+        assert_eq!(
+            result, expected,
+            "expected candidate '{}' to be too short, but got {:?}",
+            candidate, result
+        );
     }
 
     #[test]
     fn test_new_too_long() {
         let candidate = "a".repeat(PASSWORD_MAX_BYTES + 1);
-        let result =  ASCIICharacterPolicy.validate(&candidate);
-        let expected = Err(ASCIICharacterPolicyError::TooLong(candidate.len()));
-        assert_eq!(result, expected, "expected candidate '{}' to be too long, but got {:?}", candidate, result);
+        let result = AsciiCharacterPolicy.validate(&candidate);
+        let expected = Err(AsciiCharacterPolicyError::TooLong(candidate.len()));
+        assert_eq!(
+            result, expected,
+            "expected candidate '{}' to be too long, but got {:?}",
+            candidate, result
+        );
     }
 
     #[test]
     fn test_new_invalid_chars() {
         let candidate = "abcdefghあ";
-        let result =  ASCIICharacterPolicy.validate(candidate);
-        let expected = Err(ASCIICharacterPolicyError::InvalidChars);
-        assert_eq!(result, expected, "expected candidate '{}' to contain invalid characters, but got {:?}", candidate, result);
+        let result = AsciiCharacterPolicy.validate(candidate);
+        let expected = Err(AsciiCharacterPolicyError::InvalidChars);
+        assert_eq!(
+            result, expected,
+            "expected candidate '{}' to contain invalid characters, but got {:?}",
+            candidate, result
+        );
+    }
+
+    #[test]
+    fn test_display() {
+        let display = format!("{}", AsciiCharacterPolicy);
+        let expected = "AsciiCharacterPolicy";
+        assert_eq!(
+            display, expected,
+            "expected display output to be '{}', but got '{}'",
+            expected, display
+        );
     }
 }
