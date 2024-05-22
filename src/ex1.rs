@@ -41,9 +41,9 @@ fn password_allowed_chars() -> &'static Regex {
 /// Error type for [Password] instantiation.
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum PasswordError {
-    #[error("passwords must be at least {PASSWORD_MIN_BYTES} characters long, but candidate was only {0} characters")]
+    #[error("passwords must be at least {PASSWORD_MIN_BYTES} bytes long, but candidate was only {0} bytes")]
     TooShort(usize),
-    #[error("passwords must be at most {PASSWORD_MAX_BYTES} characters long, but candidate was {0} characters")]
+    #[error("passwords must be at most {PASSWORD_MAX_BYTES} bytes long, but candidate was {0} bytes")]
     TooLong(usize),
     #[error("password candidate contained invalid characters")]
     InvalidChars,
