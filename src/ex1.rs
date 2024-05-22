@@ -13,7 +13,7 @@
 use std::fmt;
 use std::fmt::{Debug, Display};
 use std::sync::OnceLock;
-use argon2::{password_hash::{rand_core, SaltString, PasswordHash, PasswordHasher, PasswordVerifier}, Argon2, password_hash};
+use argon2::{password_hash::{rand_core, SaltString, PasswordHasher}, Argon2, password_hash};
 use regex::Regex;
 use thiserror::Error;
 
@@ -133,7 +133,9 @@ fn hash_password_candidate(candidate: &str) -> Result<String, password_hash::Err
 
 #[cfg(test)]
 mod password_tests {
+    use argon2::PasswordVerifier;
     use super::*;
+
 
     #[test]
     fn test_new_valid() {
@@ -146,7 +148,7 @@ mod password_tests {
         // With any respectable hashing algorithm, two hashes of the same password will not be
         // equal. We can't compare hashes directly, but we can verify that a hash matches a
         // candidate using the original hashing crate.
-        let parsed_hash = PasswordHash::new(&password.hash).unwrap();
+        let parsed_hash = argon2::PasswordHash::new(&password.hash).unwrap();
         let verification = Argon2::default().verify_password(candidate.as_bytes(), &parsed_hash);
         assert!(verification.is_ok(), "expected hash to match candidate '{}', but got {:?}", candidate, verification);
     }
@@ -217,7 +219,7 @@ mod password_tests {
         assert!(result.is_ok(), "expected candidate '{}' to be valid, but got {:?}", candidate, result);
 
         let password = result.unwrap();
-        let parsed_hash = PasswordHash::new(&password.hash).unwrap();
+        let parsed_hash = argon2::PasswordHash::new(&password.hash).unwrap();
         let verification = Argon2::default().verify_password(candidate.as_bytes(), &parsed_hash);
         assert!(verification.is_ok(), "expected hash to match candidate '{}', but got {:?}", candidate, verification);
     }
