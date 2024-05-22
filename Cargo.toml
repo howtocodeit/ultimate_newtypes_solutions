@@ -7,5 +7,7 @@ edition = "2021"
 
 [dependencies]
 argon2 = { version = "0.5.3", features = ["std"] }
-regex = "1.10.4"
+emojis = "0.6.2"
+regex = { version = "1.10.4", features = ["unicode-bool"] }
 thiserror = "1.0.61"
+unicode-segmentation = "1.11.0"
