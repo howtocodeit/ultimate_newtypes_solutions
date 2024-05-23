@@ -19,14 +19,16 @@
    think outside the box.
 */
 
-use argon2::password_hash::{rand_core, SaltString};
-use argon2::{password_hash, Argon2, PasswordHasher, PasswordVerifier};
 use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
+
+use argon2::password_hash::{rand_core, SaltString};
+use argon2::{password_hash, Argon2, PasswordHasher, PasswordVerifier};
 use thiserror::Error;
 
-use crate::ex2::PasswordVerificationError;
 pub use password_policy::PasswordPolicy;
+
+use crate::ex2::PasswordVerificationError;
 
 pub mod password_policy;
 
@@ -94,9 +96,11 @@ impl AsRef<str> for Password {
 
 #[cfg(test)]
 mod password_tests {
-    use super::*;
-    use crate::ex3::password_policy::no_op_policy::NoOpPolicy;
     use std::sync::OnceLock;
+
+    use crate::ex3::password_policy::no_op_policy::NoOpPolicy;
+
+    use super::*;
 
     #[test]
     fn test_new_unchecked() {
@@ -204,8 +208,9 @@ mod password_tests {
 /// # Examples
 /// ```
 /// use ultimate_newtypes_solutions::ex3::{password_policy, PasswordBuilder};
+/// use ultimate_newtypes_solutions::ex3::password_policy::AsciiCharsetPolicy;
 ///
-/// let policy = password_policy::AsciiCharacterPolicy;
+/// let policy = AsciiCharsetPolicy::default();
 /// let password_builder = PasswordBuilder::new(policy);
 /// let candidate = "password123";
 /// let password = password_builder.new_password(candidate).unwrap();
@@ -267,11 +272,10 @@ fn hash_password_candidate(candidate: &str) -> Result<String, password_hash::Err
 
 #[cfg(test)]
 mod password_builder_tests {
-    use super::*;
-    use crate::ex3::password_policy::insurmountable_policy::{
-        InsurmountablePolicy, UnavoidableError,
-    };
+    use crate::ex3::password_policy::impossible_policy::{InsurmountablePolicy, UnavoidableError};
     use crate::ex3::password_policy::no_op_policy::NoOpPolicy;
+
+    use super::*;
 
     #[test]
     fn test_valid_password() {

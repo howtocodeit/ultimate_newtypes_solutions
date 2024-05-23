@@ -1,14 +1,16 @@
 #![cfg(test)]
 
 /*!
-   # insurmountable_policy
+   # impossible_policy
 
    A test-only module that provides a mock password policy that rejects all candidates.
 */
 
-use crate::ex3::PasswordPolicy;
 use std::fmt::Display;
+
 use thiserror::Error;
+
+use crate::ex3::PasswordPolicy;
 
 /// A mock password policy that rejects all candidates.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
