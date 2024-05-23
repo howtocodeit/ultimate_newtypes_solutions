@@ -47,7 +47,7 @@ pub struct Password {
 impl Password {
     /// Creates a new `Password` instance with the given `hash`, bypassing validation and hashing.
     ///
-    /// # Invariants
+    /// # Safety
     /// The caller must ensure that `hash` is a valid Argon2id password hash.
     pub unsafe fn new_unchecked(hash: String) -> Self {
         Self { hash }
