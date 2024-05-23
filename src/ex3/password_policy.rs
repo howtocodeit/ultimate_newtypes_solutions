@@ -7,7 +7,7 @@
 
 pub use ascii_charset_policy::AsciiCharsetPolicy;
 #[cfg(test)]
-pub use impossible_policy::InsurmountablePolicy;
+pub use impossible_policy::ImpossiblePolicy;
 #[cfg(test)]
 pub use no_op_policy::NoOpPolicy;
 pub use one_emoji_policy::OneEmojiPolicy;

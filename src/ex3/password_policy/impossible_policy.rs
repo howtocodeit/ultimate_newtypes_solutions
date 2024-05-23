@@ -14,21 +14,21 @@ use crate::ex3::PasswordPolicy;
 
 /// A mock password policy that rejects all candidates.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct InsurmountablePolicy;
+pub struct ImpossiblePolicy;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
 #[error("unavoidable error")]
-pub struct UnavoidableError;
+pub struct UnavoidableViolationError;
 
-impl PasswordPolicy for InsurmountablePolicy {
-    type Error = UnavoidableError;
+impl PasswordPolicy for ImpossiblePolicy {
+    type Error = UnavoidableViolationError;
 
     fn validate(&self, _candidate: &str) -> Result<(), Self::Error> {
-        Err(UnavoidableError)
+        Err(UnavoidableViolationError)
     }
 }
 
-impl Display for InsurmountablePolicy {
+impl Display for ImpossiblePolicy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "InsurmountablePolicy")
     }

@@ -22,8 +22,8 @@
 use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
 
+use argon2::{Argon2, password_hash, PasswordHasher, PasswordVerifier};
 use argon2::password_hash::{rand_core, SaltString};
-use argon2::{password_hash, Argon2, PasswordHasher, PasswordVerifier};
 use thiserror::Error;
 
 pub use password_policy::PasswordPolicy;
@@ -272,7 +272,9 @@ fn hash_password_candidate(candidate: &str) -> Result<String, password_hash::Err
 
 #[cfg(test)]
 mod password_builder_tests {
-    use crate::ex3::password_policy::impossible_policy::{InsurmountablePolicy, UnavoidableError};
+    use crate::ex3::password_policy::impossible_policy::{
+        ImpossiblePolicy, UnavoidableViolationError,
+    };
     use crate::ex3::password_policy::no_op_policy::NoOpPolicy;
 
     use super::*;
@@ -301,11 +303,11 @@ mod password_builder_tests {
 
     #[test]
     fn test_invalid_password() {
-        let builder = PasswordBuilder::new(InsurmountablePolicy);
+        let builder = PasswordBuilder::new(ImpossiblePolicy);
         let candidate = "password123";
         let result = builder.new_password(candidate);
-        let expected: Result<_, PasswordError<InsurmountablePolicy>> =
-            Err(PasswordError::PolicyViolation(UnavoidableError));
+        let expected: Result<_, PasswordError<ImpossiblePolicy>> =
+            Err(PasswordError::PolicyViolation(UnavoidableViolationError));
         assert_eq!(
             result, expected,
             "expected candidate '{}' to be invalid, but got {:?}",
